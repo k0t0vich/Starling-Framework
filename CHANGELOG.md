@@ -1,6 +1,11 @@
 Starling: Changelog
 ===================
 
+version 1.4.1-k0t0vich - 2013-11-25
+--------------------------
+
+- extends flash.event.EventDispatcher
+
 version 1.4.1 - 2013-10-15
 --------------------------
 

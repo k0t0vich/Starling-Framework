@@ -11,6 +11,8 @@ Starling's API is not a direct 1:1 port of the Flash API. The classes were strea
 Just like its iOS sibling, the [Sparrow Framework][1], Starling aims to be as lightweight and easy to use as possible. As an Open Source project, much care was taken to make the source code easy to read, understand and extend.
 
 Where do I find more information about Starling?
+
+This fork use flash.events.EventDispatcher for extending starling.events.EventDispatcher
 ------------------------------------------------
 
 Here are a few starting points:
