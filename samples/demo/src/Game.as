@@ -1,5 +1,6 @@
 package 
 {
+    import flash.system.System;
     import flash.ui.Keyboard;
     import flash.utils.getDefinitionByName;
     
@@ -25,6 +26,7 @@ package
         private var mLoadingProgress:ProgressBar;
         private var mMainMenu:MainMenu;
         private var mCurrentScene:Scene;
+        private var _container:Sprite;
         
         private static var sAssets:AssetManager;
         
@@ -50,7 +52,6 @@ package
             
             mLoadingProgress = new ProgressBar(175, 20);
             mLoadingProgress.x = (background.width  - mLoadingProgress.width) / 2;
-            mLoadingProgress.y = (background.height - mLoadingProgress.height) / 2;
             mLoadingProgress.y = background.height * 0.7;
             addChild(mLoadingProgress);
             
@@ -76,6 +77,10 @@ package
         
         private function showMainMenu():void
         {
+            // now would be a good time for a clean-up 
+            System.pauseForGCIfCollectionImminent(0);
+            System.gc();
+            
             if (mMainMenu == null)
                 mMainMenu = new MainMenu();
             
