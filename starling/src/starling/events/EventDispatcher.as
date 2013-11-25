@@ -112,6 +112,8 @@ package starling.events
 					listeners[len] = newListener;
 				}
 			}
+			
+			super.addEventListener(type, listener, useCapture, priority, useWeakReference);
         }
         
         /** Removes an event listener from the object. */
@@ -131,16 +133,37 @@ package starling.events
                     mEventListeners[type] = remainingListeners;
                 }
             }
+			super.removeEventListener(type,listener, useCapture);
         }
         
         /** Removes all event listeners with a certain type, or all of them if type is null. 
          *  Be careful when removing all event listeners: you never know who else was listening. */
         public function removeEventListeners(type:String=null):void
-        {
-            if (type && mEventListeners)
-                delete mEventListeners[type];
-            else
-                mEventListeners = null;
+		{	if ( !this.mEventListeners )
+				return;
+			
+			var listeners:	Vector.<Listener>;
+			var len:		uint;
+			
+			for (var key:String in this.mEventListeners) {
+				if (key == type || !type) {
+					
+					listeners = mEventListeners[key] as Vector.<Listener>;
+					len = listeners.length;
+					
+					for (var i:uint = 0; i < len; i++)
+						super.removeEventListener(key, listeners[i].func);
+					if (key == type) {
+						delete mEventListeners[key];
+						return;
+					}
+					
+				}
+			}
+			
+			if ( !type )
+				mEventListeners = null;
+		
         }
         
         /** Dispatches an event to all objects that have registered listeners for its type. 
@@ -149,7 +172,12 @@ package starling.events
          *  stops its propagation manually. */
         override public function dispatchEvent(event:flash.events.Event):Boolean
         {	
-			if (!(event is starling.events.Event)) throw new IllegalOperationError("Событие должно быть starling.events.Event или его наследником");
+			if (!(event is starling.events.Event)) 
+				if (!event.bubbles){
+					return super.dispatchEvent(event);
+				} else { 	
+					throw new IllegalOperationError("Bubbling Event must be starling.events.Event or must extends it");
+				}
 			
 			const e:starling.events.Event = event as starling.events.Event;
             var bubbles:Boolean = e.bubbles;
