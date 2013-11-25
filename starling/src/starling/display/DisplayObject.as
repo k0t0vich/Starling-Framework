@@ -10,6 +10,7 @@
 
 package starling.display
 {
+    import flash.events.Event;
     import flash.geom.Matrix;
     import flash.geom.Point;
     import flash.geom.Rectangle;
@@ -385,12 +386,12 @@ package starling.display
         
         // stage event handling
         
-        public override function dispatchEvent(event:Event):void
+        public override function dispatchEvent(event:flash.events.Event):Boolean
         {
-            if (event.type == Event.REMOVED_FROM_STAGE && stage == null)
-                return; // special check to avoid double-dispatch of RfS-event.
+            if (event.type == starling.events.Event.REMOVED_FROM_STAGE && stage == null)
+                return false; // special check to avoid double-dispatch of RfS-event.
             else
-                super.dispatchEvent(event);
+               return super.dispatchEvent(event);
         }
         
         // enter frame event optimization
@@ -401,26 +402,26 @@ package starling.display
         // part of the stage, (b) it must not cause memory leaks when the user forgets to call
         // dispose and (c) there might be multiple listeners for this event.
         
-        public override function addEventListener(type:String, listener:Function):void
+        public override function addEventListener(type:String, listener:Function,useCapture:Boolean=false, priority:int=0, useWeakReference:Boolean=false):void
         {
-            if (type == Event.ENTER_FRAME && !hasEventListener(type))
+            if (type == starling.events.Event.ENTER_FRAME && !hasEventListener(type))
             {
-                addEventListener(Event.ADDED_TO_STAGE, addEnterFrameListenerToStage);
-                addEventListener(Event.REMOVED_FROM_STAGE, removeEnterFrameListenerFromStage);
+                addEventListener(starling.events.Event.ADDED_TO_STAGE, addEnterFrameListenerToStage);
+                addEventListener(starling.events.Event.REMOVED_FROM_STAGE, removeEnterFrameListenerFromStage);
                 if (this.stage) addEnterFrameListenerToStage();
             }
             
-            super.addEventListener(type, listener);
+            super.addEventListener(type, listener, useCapture, priority, useWeakReference);
         }
         
-        public override function removeEventListener(type:String, listener:Function):void
+        public override function removeEventListener(type:String, listener:Function, useCapture:Boolean=false):void
         {
-            super.removeEventListener(type, listener);
+            super.removeEventListener(type, listener, useCapture);
             
-            if (type == Event.ENTER_FRAME && !hasEventListener(type))
+            if (type == starling.events.Event.ENTER_FRAME && !hasEventListener(type))
             {
-                removeEventListener(Event.ADDED_TO_STAGE, addEnterFrameListenerToStage);
-                removeEventListener(Event.REMOVED_FROM_STAGE, removeEnterFrameListenerFromStage);
+                removeEventListener(starling.events.Event.ADDED_TO_STAGE, addEnterFrameListenerToStage);
+                removeEventListener(starling.events.Event.REMOVED_FROM_STAGE, removeEnterFrameListenerFromStage);
                 removeEnterFrameListenerFromStage();
             }
         }
@@ -429,10 +430,10 @@ package starling.display
         {
             super.removeEventListeners(type);
             
-            if (type == null || type == Event.ENTER_FRAME)
+            if (type == null || type == starling.events.Event.ENTER_FRAME)
             {
-                removeEventListener(Event.ADDED_TO_STAGE, addEnterFrameListenerToStage);
-                removeEventListener(Event.REMOVED_FROM_STAGE, removeEnterFrameListenerFromStage);
+                removeEventListener(starling.events.Event.ADDED_TO_STAGE, addEnterFrameListenerToStage);
+                removeEventListener(starling.events.Event.REMOVED_FROM_STAGE, removeEnterFrameListenerFromStage);
                 removeEnterFrameListenerFromStage();
             }
         }

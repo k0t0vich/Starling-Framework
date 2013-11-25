@@ -10,6 +10,10 @@
 
 package starling.events
 {
+    import flash.errors.IllegalOperationError;
+    import flash.events.Event;
+    import flash.events.EventDispatcher;
+    import flash.events.IEventDispatcher;
     import flash.utils.Dictionary;
     
     import starling.core.starling_internal;
@@ -35,46 +39,94 @@ package starling.events
      *  @see Event
      *  @see starling.display.DisplayObject DisplayObject
      */
-    public class EventDispatcher
+    public class EventDispatcher extends flash.events.EventDispatcher
     {
-        private var mEventListeners:Dictionary;
+        private var mEventListeners:Object;
         
         /** Helper object. */
         private static var sBubbleChains:Array = [];
         
         /** Creates an EventDispatcher. */
-        public function EventDispatcher()
-        {  }
+        public function EventDispatcher(target:IEventDispatcher=null)
+        {  
+			super(target);
+		}
         
         /** Registers an event listener at a certain object. */
-        public function addEventListener(type:String, listener:Function):void
+        override public function addEventListener(type:String, listener:Function, useCapture:Boolean = false, priority:int = 0, useWeakReference:Boolean = false):void
         {
+			if (useCapture){
+				//TODO realize useCapture functionality
+				throw new Error ("starling.events.EventDispatcher#addEventListener don't use true value for useCapture parameter");
+			}
+			
             if (mEventListeners == null)
-                mEventListeners = new Dictionary();
+                mEventListeners = {};
             
-            var listeners:Vector.<Function> = mEventListeners[type] as Vector.<Function>;
+            var listeners:Vector.<Listener> = mEventListeners[type] as Vector.<Listener>;
             if (listeners == null)
-                mEventListeners[type] = new <Function>[listener];
-            else if (listeners.indexOf(listener) == -1) // check for duplicates
-                listeners.push(listener);
+                mEventListeners[type] = new <Listener>[new Listener(listener, useCapture, priority, useWeakReference)];
+           	else {
+				var i:int;
+				var index:int = -1;
+				var len:uint = listeners.length;
+				
+				var newListener:Listener;
+				var prevListener:Listener;
+				var currentListener:Listener;
+				
+				var shift:Boolean = false;
+				
+				//indexOf				
+				for (i = 0; i < len; i++){
+					currentListener = listeners[i];
+					if ( currentListener.listener == listener){
+						index = i;
+						break;
+					}
+				}		
+				
+				if (index == -1) {
+					newListener = new Listener(listener, useCapture, priority, useWeakReference);
+				} else {
+					return;
+				}
+				
+				// slice
+				for (i = 0; i < len; i++){
+					currentListener = listeners[i];							
+					if (shift) {
+						listeners[i] = prevListener;
+						prevListener = currentListener;
+					} else  if(currentListener.priority < priority) {					
+						shift = true;
+						prevListener = currentListener;
+						listeners[i] = newListener;				
+					}
+				}
+				
+				// push
+				if(shift) {		
+					listeners[len] = prevListener;	
+				} else {
+					listeners[len] = newListener;
+				}
+			}
         }
         
         /** Removes an event listener from the object. */
-        public function removeEventListener(type:String, listener:Function):void
-        {
+        override public function removeEventListener(type:String, listener:Function, useCapture:Boolean = false):void
+        {		
             if (mEventListeners)
             {
-                var listeners:Vector.<Function> = mEventListeners[type] as Vector.<Function>;
+                var listeners:Vector.<Listener> = mEventListeners[type] as Vector.<Listener>;
                 if (listeners)
                 {
                     var numListeners:int = listeners.length;
-                    var remainingListeners:Vector.<Function> = new <Function>[];
+                    var remainingListeners:Vector.<Listener> = new <Listener>[];
                     
                     for (var i:int=0; i<numListeners; ++i)
-                    {
-                        var otherListener:Function = listeners[i];
-                        if (otherListener != listener) remainingListeners.push(otherListener);
-                    }
+                        if (listeners[i].func != listener) remainingListeners.push(listeners[i]);
                     
                     mEventListeners[type] = remainingListeners;
                 }
@@ -95,33 +147,38 @@ package starling.events
          *  If an event with enabled 'bubble' property is dispatched to a display object, it will 
          *  travel up along the line of parents, until it either hits the root object or someone
          *  stops its propagation manually. */
-        public function dispatchEvent(event:Event):void
-        {
-            var bubbles:Boolean = event.bubbles;
+        override public function dispatchEvent(event:flash.events.Event):Boolean
+        {	
+			if (!(event is starling.events.Event)) throw new IllegalOperationError("Событие должно быть starling.events.Event или его наследником");
+			
+			const e:starling.events.Event = event as starling.events.Event;
+            var bubbles:Boolean = e.bubbles;
             
             if (!bubbles && (mEventListeners == null || !(event.type in mEventListeners)))
-                return; // no need to do anything
+                return true; // no need to do anything
             
             // we save the current target and restore it later;
             // this allows users to re-dispatch events without creating a clone.
             
-            var previousTarget:EventDispatcher = event.target;
-            event.setTarget(this);
+            var previousTarget:starling.events.EventDispatcher = e.target as starling.events.EventDispatcher;
+            e.setTarget(this);
             
-            if (bubbles && this is DisplayObject) bubbleEvent(event);
-            else                                  invokeEvent(event);
+            if (bubbles && this is DisplayObject) bubbleEvent(e);
+            else                                  invokeEvent(e);
             
-            if (previousTarget) event.setTarget(previousTarget);
+            if (previousTarget) e.setTarget(previousTarget);
+			
+			return true;
         }
         
         /** @private
          *  Invokes an event on the current object. This method does not do any bubbling, nor
          *  does it back-up and restore the previous target on the event. The 'dispatchEvent' 
          *  method uses this method internally. */
-        internal function invokeEvent(event:Event):Boolean
-        {
-            var listeners:Vector.<Function> = mEventListeners ?
-                mEventListeners[event.type] as Vector.<Function> : null;
+        internal function invokeEvent(event:starling.events.Event):Boolean
+		{ 			
+            var listeners:Vector.<Listener> = mEventListeners ?
+                mEventListeners[event.type] as Vector.<Listener> : null;
             var numListeners:int = listeners == null ? 0 : listeners.length;
             
             if (numListeners)
@@ -134,12 +191,14 @@ package starling.events
                 
                 for (var i:int=0; i<numListeners; ++i)
                 {
-                    var listener:Function = listeners[i] as Function;
-                    var numArgs:int = listener.length;
+                    var listener:Listener = listeners[i];
+					var func:Function = listener.func;
+					if (func == null) continue;
+                    var numArgs:int = func.length;
                     
-                    if (numArgs == 0) listener();
-                    else if (numArgs == 1) listener(event);
-                    else listener(event, event.data);
+                    if (numArgs == 0) func();
+                    else if (numArgs == 1) func(event);
+                    else func(event, event.data);
                     
                     if (event.stopsImmediatePropagation)
                         return true;
@@ -154,17 +213,17 @@ package starling.events
         }
         
         /** @private */
-        internal function bubbleEvent(event:Event):void
+        internal function bubbleEvent(event:starling.events.Event):void
         {
             // we determine the bubble chain before starting to invoke the listeners.
             // that way, changes done by the listeners won't affect the bubble chain.
             
-            var chain:Vector.<EventDispatcher>;
+            var chain:Vector.<starling.events.EventDispatcher>;
             var element:DisplayObject = this as DisplayObject;
             var length:int = 1;
             
             if (sBubbleChains.length > 0) { chain = sBubbleChains.pop(); chain[0] = element; }
-            else chain = new <EventDispatcher>[element];
+            else chain = new <starling.events.EventDispatcher>[element];
             
             while ((element = element.parent) != null)
                 chain[int(length++)] = element;
@@ -186,18 +245,54 @@ package starling.events
         {
             if (bubbles || hasEventListener(type)) 
             {
-                var event:Event = Event.fromPool(type, bubbles, data);
+                var event:starling.events.Event = starling.events.Event.fromPool(type, bubbles, data);
                 dispatchEvent(event);
-                Event.toPool(event);
+				starling.events.Event.toPool(event);
             }
         }
         
         /** Returns if there are listeners registered for a certain event type. */
-        public function hasEventListener(type:String):Boolean
+        override public function hasEventListener(type:String):Boolean
         {
-            var listeners:Vector.<Function> = mEventListeners ?
-                mEventListeners[type] as Vector.<Function> : null;
+            var listeners:Vector.<Listener> = mEventListeners ?
+                mEventListeners[type] as Vector.<Listener> : null;
             return listeners ? listeners.length != 0 : false;
         }
     }
+}
+
+import flash.utils.Dictionary;
+
+internal class Listener {
+	
+	public function Listener(func:Function, useCapture:Boolean, priority:int, useWeakReference:Boolean) 
+	{
+		if (useWeakReference) 
+		{
+			mDict = new Dictionary(true);
+			mDict[func] = true;
+		} else {
+			this.listener = func;
+		}
+		this.priority = priority;
+		this.useCapture = useCapture;
+	}
+	
+	public var listener:Function = null;
+	public var priority:int;
+	public var useCapture:Boolean;
+	
+	private var mDict:Dictionary = null;
+	
+	public function get func():Function 
+	{
+		if (listener)
+			return listener;
+		for(var item:Object in mDict)
+			return item as Function;
+		return null;
+	}
+	public function toString():String{
+		return String(priority);
+	}
 }
