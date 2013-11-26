@@ -177,10 +177,11 @@ package starling.events
 					return super.dispatchEvent(event);
 				} else { 	
 					throw new IllegalOperationError("Bubbling Event must be starling.events.Event or must extends it");
+					//TODO: May be always dispatch it? 
 				}
 			
-			const e:starling.events.Event = event as starling.events.Event;
-            var bubbles:Boolean = e.bubbles;
+			const starlingEvent:starling.events.Event = event as starling.events.Event;
+            var bubbles:Boolean = starlingEvent.bubbles;
             
             if (!bubbles && (mEventListeners == null || !(event.type in mEventListeners)))
                 return true; // no need to do anything
@@ -188,13 +189,13 @@ package starling.events
             // we save the current target and restore it later;
             // this allows users to re-dispatch events without creating a clone.
             
-            var previousTarget:starling.events.EventDispatcher = e.target as starling.events.EventDispatcher;
-            e.setTarget(this);
+            var previousTarget:starling.events.EventDispatcher = starlingEvent.target as starling.events.EventDispatcher;
+            starlingEvent.setTarget(this);
             
-            if (bubbles && this is DisplayObject) bubbleEvent(e);
-            else                                  invokeEvent(e);
+            if (bubbles && this is DisplayObject) bubbleEvent(starlingEvent);
+            else                                  invokeEvent(starlingEvent);
             
-            if (previousTarget) e.setTarget(previousTarget);
+            if (previousTarget) starlingEvent.setTarget(previousTarget);
 			
 			return true;
         }
@@ -271,21 +272,33 @@ package starling.events
          *  avoid allocations. */
         public function dispatchEventWith(type:String, bubbles:Boolean=false, data:Object=null):void
         {
-            if (bubbles || hasEventListener(type)) 
+            if (bubbles && willTrigger(type) || hasEventListener(type)) 
             {
                 var event:starling.events.Event = starling.events.Event.fromPool(type, bubbles, data);
                 dispatchEvent(event);
 				starling.events.Event.toPool(event);
             }
         }
-        
-        /** Returns if there are listeners registered for a certain event type. */
-        override public function hasEventListener(type:String):Boolean
-        {
-            var listeners:Vector.<Listener> = mEventListeners ?
-                mEventListeners[type] as Vector.<Listener> : null;
-            return listeners ? listeners.length != 0 : false;
-        }
+		
+		/** Returns if there are listeners registered for a certain event type on this object or
+		 *  on any objects that an event of the specified type can bubble to. */
+		override public function willTrigger(type:String):Boolean
+		{
+			var element:DisplayObject = this as DisplayObject;
+			if(!element)
+			{
+				return super.hasEventListener(type);
+			}
+			do
+			{
+				if(element.hasEventListener(type))
+				{
+					return true;
+				}
+			}
+			while ((element = element.parent) != null)
+			return false;
+		}
     }
 }
 
