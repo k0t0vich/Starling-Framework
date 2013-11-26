@@ -15,3 +15,5 @@ starling/doc/html/
 /.actionScriptProperties
 /.flexLibProperties
 /.project
+
+/starling/bin/*.swc
