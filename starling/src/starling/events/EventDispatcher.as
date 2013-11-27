@@ -43,9 +43,6 @@ package starling.events
     {		
         private var mEventListeners:Object;
         
-        /** Helper object. */
-        private static var sBubbleChains:Array = [];
-        
         /** Creates an EventDispatcher. */
         public function EventDispatcher(target:IEventDispatcher=null)
         {  
@@ -115,6 +112,57 @@ package starling.events
             }
 			super.removeEventListener(type, listener, useCapture);
         }
+		
+		
+		/** Dispatches an event to all objects that have registered listeners for its type. 
+		 *  If an event with enabled 'bubble' property is dispatched to a display object, it will 
+		 *  travel up along the line of parents, until it either hits the root object or someone
+		 *  stops its propagation manually. */
+		override public function dispatchEvent(event:flash.events.Event):Boolean
+		{
+			if ( event.bubbles ) 
+			{
+				if ( event is starling.events.Event ) 
+					return bubbleEvent( event as starling.events.Event );
+				else 
+					throw new TypeError( 'Bubbling Event must be starling.events.Event or must extends it' );
+				//TODO: May be anyway dispatch it? 
+			} 
+			else 
+				return super.dispatchEvent(event);
+		}	
+		
+		/** Returns if there are listeners registered for a certain event type on this object or
+		 *  on any objects that an event of the specified type can bubble to. */	
+		public override function willTrigger(type:String):Boolean 
+		{
+			var element:DisplayObject = this as DisplayObject;
+			if(!element)
+			{
+				return super.hasEventListener(type);
+			}
+			do
+			{
+				if(element.hasEventListener(type))
+				{
+					return true;
+				}
+			}
+			while ((element = element.parent) != null)
+			return false;
+		}
+			
+		/** Dispatches an event with the given parameters to all objects that have registered 
+		 *  listeners for the given type. */
+		public function dispatchEventWith(type:String, bubbles:Boolean=false, data:Object=null):void
+		{
+			// if (super.hasEventListener(type) || bubbles && willTrigger(type)) 
+			if (super.hasEventListener(type) || bubbles) 
+			{
+				var event:starling.events.Event = new starling.events.Event(type, bubbles, data);
+				dispatchEvent(event);
+			}
+		}
         
         /** Removes all event listeners with a certain type, or all of them if type is null. 
          *  Be careful when removing all event listeners: you never know who else was listening. */
@@ -146,32 +194,8 @@ package starling.events
 				
 				if ( !type )
 					mEventListeners = null;
-        }
-        
-        /** Dispatches an event to all objects that have registered listeners for its type. 
-         *  If an event with enabled 'bubble' property is dispatched to a display object, it will 
-         *  travel up along the line of parents, until it either hits the root object or someone
-         *  stops its propagation manually. */
-        override public function dispatchEvent(event:flash.events.Event):Boolean
- 		{
-			if ( event.bubbles ) 
-			{
-				if ( event is starling.events.Event ) 
-					return bubbleEvent( event as starling.events.Event );
-				else 
-					throw new TypeError( 'Bubbling Event must be starling.events.Event or must extends it' );
-				//TODO: May be anyway dispatch it? 
-			} 
-			else 
-				return super.dispatchEvent(event);
-        }
-        
-
-        private function $dispathEvent(event:starling.events.Event):Boolean
-		{ 		
-			return super.dispatchEvent(event);
-        }
-		
+        } 
+			
 		/** @private
 		 *  Invokes an clone of event with previous target on the current object. This method does not do any bubbling, nor
 		 *  does it back-up. */
@@ -191,7 +215,12 @@ package starling.events
 			}
 			return false;
 		}
-        
+
+        private function $dispathEvent(event:starling.events.Event):Boolean
+		{ 		
+			return super.dispatchEvent(event);
+        }
+    
         /** @private */
         private function bubbleEvent(event:starling.events.Event):Boolean
         {
@@ -222,38 +251,6 @@ package starling.events
 			}
 			return !canceled;
         }
-        
-        /** Dispatches an event with the given parameters to all objects that have registered 
-         *  listeners for the given type. */
-        public function dispatchEventWith(type:String, bubbles:Boolean=false, data:Object=null):void
-        {
-           // if (super.hasEventListener(type) || bubbles && willTrigger(type)) 
-            if (super.hasEventListener(type) || bubbles) 
-            {
-				var event:starling.events.Event = new starling.events.Event(type, bubbles, data);
-                dispatchEvent(event);
-            }
-        }
-        
-		/** Returns if there are listeners registered for a certain event type on this object or
-		 *  on any objects that an event of the specified type can bubble to. */	
-		public override function willTrigger(type:String):Boolean 
-		{
-			var element:DisplayObject = this as DisplayObject;
-			if(!element)
-			{
-				return super.hasEventListener(type);
-			}
-			do
-			{
-				if(element.hasEventListener(type))
-				{
-					return true;
-				}
-			}
-			while ((element = element.parent) != null)
-			return false;
-		}
 	
 	}
 }
