@@ -83,18 +83,22 @@ package starling.events
         private var mTarget:EventDispatcher;
         private var mCurrentTarget:EventDispatcher;
         private var mType:String;
-        private var mBubbles:Boolean;
+		internal var mBubbles:Boolean;
         private var mStopsPropagation:Boolean;
         private var mStopsImmediatePropagation:Boolean;
         private var mData:Object;
+        private var mEventPhase:uint;
+        private var mCanceled:Boolean;
+        private var mCancelable:Boolean;
         
         /** Creates an event object that can be passed to listeners. */
-        public function Event(type:String, bubbles:Boolean=false, data:Object=null)
+        public function Event(type:String, bubbles:Boolean=false, data:Object=null, cancelable:Boolean=false)
         {
-			super(type, bubbles);
+			super(type, bubbles, cancelable);
             mType = type;
             mBubbles = bubbles;
             mData = data;
+			mCancelable = cancelable;
         }
         
         /** Prevents listeners at the next bubble stage from receiving the event. */
@@ -105,10 +109,24 @@ package starling.events
         
         /** Prevents any other listeners from receiving the event. */
 		override public function stopImmediatePropagation():void
-        {
+        {	
+			super.stopImmediatePropagation();
             mStopsPropagation = mStopsImmediatePropagation = true;
         }
-        
+		
+		override public function preventDefault():void {
+			if ( mCancelable ) {
+				super.preventDefault();
+				mCanceled = true;
+			}
+		}
+		
+		public override function clone():flash.events.Event 
+		{
+			var c:Class = ( this as Object ).constructor as Class;
+			return new c( super.type, super.bubbles, mData, super.cancelable );
+		}
+		
         /** Returns a description of the event, containing type and bubble information. */
 		override public function toString():String
         {
@@ -120,13 +138,17 @@ package starling.events
 		override public function get bubbles():Boolean { return mBubbles; }
         
         /** The object that dispatched the event. */
-		override public function get target():Object { return mTarget; }
+		override public function get target():Object { return mTarget || super.target; }
         
         /** The object the event is currently bubbling at. */
-		override public function get currentTarget():Object { return mCurrentTarget; }
+		override public function get currentTarget():Object { return mCurrentTarget || super.currentTarget; }
         
         /** A string that identifies the event. */
 		override public function get type():String { return mType; }
+		
+		public override function get eventPhase():uint {
+			return mEventPhase || super.eventPhase;
+		}
         
         /** Arbitrary data that is attached to the event. */
         public function get data():Object { return mData; }
@@ -141,20 +163,29 @@ package starling.events
         
         /** @private */
         internal function setData(value:Object):void { mData = value; }
-        
+		
+		/** @private */
+        internal function setCanceled(value:Boolean):void { mCanceled = value; }
+		
+		/** @private */
+		internal function setEventPhase(value:uint):void { mEventPhase = value; }
+		
         /** @private */
         internal function get stopsPropagation():Boolean { return mStopsPropagation; }
         
         /** @private */
         internal function get stopsImmediatePropagation():Boolean { return mStopsImmediatePropagation; }
         
+		/** @private */
+        internal function get canceled():Boolean { return mCanceled; }
+        
         // event pooling
         
         /** @private */
-        starling_internal static function fromPool(type:String, bubbles:Boolean=false, data:Object=null):starling.events.Event
+        starling_internal static function fromPool(type:String, bubbles:Boolean=false, data:Object=null, cancelable:Boolean=false):starling.events.Event
         {
-            if (sEventPool.length) return sEventPool.pop().reset(type, bubbles, data);
-            else return new starling.events.Event(type, bubbles, data);
+            if (sEventPool.length) return sEventPool.pop().reset(type, bubbles, data, cancelable);
+            else return new starling.events.Event(type, bubbles, data, cancelable);
         }
         
         /** @private */
@@ -165,13 +196,14 @@ package starling.events
         }
         
         /** @private */
-        starling_internal function reset(type:String, bubbles:Boolean=false, data:Object=null):starling.events.Event
+        starling_internal function reset(type:String, bubbles:Boolean=false, data:Object=null, cancelable:Boolean=false):starling.events.Event
         {
             mType = type;
             mBubbles = bubbles;
             mData = data;
             mTarget = mCurrentTarget = null;
-            mStopsPropagation = mStopsImmediatePropagation = false;
+			mCanceled = mStopsPropagation = mStopsImmediatePropagation = false;
+			mCancelable = cancelable;
             return this;
         }
     }
