@@ -56,7 +56,7 @@ package starling.core
             addEventListener(Event.REMOVED_FROM_STAGE, onRemovedFromStage);
         }
         
-        private function onAddedToStage():void
+        private function onAddedToStage(event:Event = null):void
         {
             addEventListener(Event.ENTER_FRAME, onEnterFrame);
             mTotalTime = mFrameCount = 0;
@@ -71,6 +71,7 @@ package starling.core
         private function onEnterFrame(event:EnterFrameEvent):void
         {
             mTotalTime += event.passedTime;
+			
             mFrameCount++;
             
             if (mTotalTime > UPDATE_INTERVAL)

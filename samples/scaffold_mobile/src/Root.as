@@ -73,15 +73,15 @@ package
             });
         }
         
-        private function onGameOver(event:Event, score:int):void
+        private function onGameOver(event:Event):void
         {
-            trace("Game Over! Score: " + score);
+            trace("Game Over! Score: " + event.data);
             showScene(Menu);
         }
         
-        private function onStartGame(event:Event, gameMode:String):void
+        private function onStartGame(event:Event):void
         {
-            trace("Game starts! Mode: " + gameMode);
+            trace("Game starts! Mode: " + event.data);
             showScene(Game);
         }
         

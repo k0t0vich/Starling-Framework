@@ -138,7 +138,7 @@ package starling.text
             super.dispose();
         }
         
-        private function onFlatten():void
+        private function onFlatten(event:Event = null):void
         {
             if (mRequiresRedraw) redraw();
         }

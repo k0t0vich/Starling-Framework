@@ -41,6 +41,7 @@ package starling.core
     import starling.animation.Juggler;
     import starling.display.DisplayObject;
     import starling.display.Stage;
+  //  import starling.events.Event;
     import starling.events.EventDispatcher;
     import starling.events.ResizeEvent;
     import starling.events.TouchPhase;
@@ -859,7 +860,7 @@ package starling.core
                 else mStatsDisplay.y = int((stageHeight - mStatsDisplay.height) / 2);
             }
             
-            function onRootCreated():void
+            function onRootCreated(event:starling.events.Event = null):void
             {
                 showStatsAt(hAlign, vAlign, scale);
                 removeEventListener(starling.events.Event.ROOT_CREATED, onRootCreated);

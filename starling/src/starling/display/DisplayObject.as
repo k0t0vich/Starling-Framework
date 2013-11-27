@@ -438,12 +438,12 @@ package starling.display
             }
         }
         
-        private function addEnterFrameListenerToStage():void
+        private function addEnterFrameListenerToStage(event:starling.events.Event = null):void
         {
             Starling.current.stage.addEnterFrameListener(this);
         }
         
-        private function removeEnterFrameListenerFromStage():void
+        private function removeEnterFrameListenerFromStage(event:starling.events.Event = null):void
         {
             Starling.current.stage.removeEnterFrameListener(this);
         }

@@ -45,8 +45,9 @@ package
             start();
         }
         
-        private function onRootCreated(event:Event, game:Game):void
+        private function onRootCreated(event:Event):void
         {
+			var game:Game = event.data as Game;
             // set framerate to 30 in software mode
             if (mStarling.context.driverInfo.toLowerCase().indexOf("software") != -1)
                 mStarling.nativeStage.frameRate = 30;
