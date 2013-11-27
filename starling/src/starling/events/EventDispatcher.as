@@ -156,8 +156,7 @@ package starling.events
 		 *  listeners for the given type. */
 		public function dispatchEventWith(type:String, bubbles:Boolean=false, data:Object=null):void
 		{
-			// if (super.hasEventListener(type) || bubbles && willTrigger(type)) 
-			if (super.hasEventListener(type) || bubbles) 
+			if (super.hasEventListener(type) || bubbles && willTrigger(type)) 
 			{
 				var event:starling.events.Event = new starling.events.Event(type, bubbles, data);
 				dispatchEvent(event);
