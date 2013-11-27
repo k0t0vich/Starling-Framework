@@ -10,6 +10,8 @@
 
 package starling.events
 {
+    import flash.events.Event;
+    
     import starling.core.starling_internal;
     import starling.display.DisplayObject;
     
@@ -53,7 +55,7 @@ package starling.events
      *  @see Touch
      *  @see TouchPhase
      */ 
-    public class TouchEvent extends Event
+    public class TouchEvent extends starling.events.Event
     {
         /** Event type for touch or mouse input. */
         public static const TOUCH:String = "touch";
@@ -181,7 +183,9 @@ package starling.events
             }
         }
         
-        // properties
+		public override function clone():flash.events.Event {
+			return new TouchEvent(type, touches, mShiftKey, mCtrlKey, bubbles);
+		}
         
         /** The time the event occurred (in seconds since application launch). */
         public function get timestamp():Number { return mTimestamp; }
