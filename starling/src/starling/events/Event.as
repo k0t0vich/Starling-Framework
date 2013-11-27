@@ -115,13 +115,14 @@ package starling.events
         }
 		
 		override public function preventDefault():void {
-			if ( mCancelable ) {
+			if ( mCancelable ) 
+			{
 				super.preventDefault();
 				mCanceled = true;
 			}
 		}
 		
-		public override function clone():flash.events.Event 
+		override public function clone():flash.events.Event 
 		{
 			var c:Class = ( this as Object ).constructor as Class;
 			return new c( super.type, super.bubbles, mData, super.cancelable );
@@ -146,7 +147,7 @@ package starling.events
         /** A string that identifies the event. */
 		override public function get type():String { return mType; }
 		
-		public override function get eventPhase():uint {
+		override public function get eventPhase():uint {
 			return mEventPhase || super.eventPhase;
 		}
         

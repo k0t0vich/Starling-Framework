@@ -64,7 +64,7 @@ package starling.events
         {
 			// For debugging you app listeners uncomment this
 			/*if(listener.length != 1){
-				throw new ArgumentError("starling.events.EventDispatcher#addEventListener argument listener must have a one parameter " + listener.length);
+				throw new ArgumentError("starling.events.EventDispatcher#addEventListener argument listener must have one parameter " + listener.length);
 			}*/
 			
 			if (useCapture)
@@ -200,7 +200,7 @@ package starling.events
 		 * Invokes an event or clone of event with previous target on the current object. This method does not do any bubbling, nor
 		 * does it back-up.
 		 * @param event
-		 * @return true if event stopped or prevented
+		 * @return true if event canceled, stopped or prevented
 		 */
 		internal function invokeEvent(event:starling.events.Event):Boolean
 		{ 	
