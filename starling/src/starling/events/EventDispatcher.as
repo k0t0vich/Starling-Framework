@@ -195,9 +195,13 @@ package starling.events
 					mEventListeners = null;
         } 
 			
-		/** @private
-		 *  Invokes an clone of event with previous target on the current object. This method does not do any bubbling, nor
-		 *  does it back-up. */
+		/** 
+		 * @private
+		 * Invokes an event or clone of event with previous target on the current object. This method does not do any bubbling, nor
+		 * does it back-up.
+		 * @param event
+		 * @return true if event stopped or prevented
+		 */
 		internal function invokeEvent(event:starling.events.Event):Boolean
 		{ 	
 			if (hasEventListener(event.type))
