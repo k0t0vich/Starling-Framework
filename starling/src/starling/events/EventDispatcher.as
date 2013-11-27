@@ -167,7 +167,7 @@ package starling.events
         }
         
 
-        internal function $dispathEvent(event:flash.events.Event):Boolean
+        private function $dispathEvent(event:starling.events.Event):Boolean
 		{ 		
 			return super.dispatchEvent(event);
         }
@@ -175,21 +175,25 @@ package starling.events
 		/** @private
 		 *  Invokes an clone of event with previous target on the current object. This method does not do any bubbling, nor
 		 *  does it back-up. */
-		internal function invokeEvent(event:flash.events.Event):Boolean
+		internal function invokeEvent(event:starling.events.Event):Boolean
 		{ 	
 			if (hasEventListener(event.type))
 			{
 				var target:DisplayObject = event.target as DisplayObject;
+				if(!target || target == this) 
+				{
+					return !super.dispatchEvent(event);
+				}
 				var clone:starling.events.Event = event.clone() as starling.events.Event;
 				clone.setTarget(target);
 				CONTAINER.$event = clone;
-				return !super.dispatchEvent( CONTAINER );
+				return !super.dispatchEvent(CONTAINER);			
 			}
 			return false;
 		}
         
         /** @private */
-        internal function bubbleEvent(event:starling.events.Event):Boolean
+        private function bubbleEvent(event:starling.events.Event):Boolean
         {
 			var canceled:Boolean = false;
 			if ( super.hasEventListener(event.type)) 
@@ -220,8 +224,7 @@ package starling.events
         }
         
         /** Dispatches an event with the given parameters to all objects that have registered 
-         *  listeners for the given type. The method uses an internal pool of event objects to 
-         *  avoid allocations. */
+         *  listeners for the given type. */
         public function dispatchEventWith(type:String, bubbles:Boolean=false, data:Object=null):void
         {
            // if (super.hasEventListener(type) || bubbles && willTrigger(type)) 
