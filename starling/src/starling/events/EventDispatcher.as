@@ -179,7 +179,7 @@ package starling.events
 		{ 	
 			if (hasEventListener(event.type))
 			{
-				var target:DisplayObject = event.target as DisplayObject;
+				var target:EventDispatcher = event.target as EventDispatcher;
 				if(!target || target == this) 
 				{
 					return !super.dispatchEvent(event);
